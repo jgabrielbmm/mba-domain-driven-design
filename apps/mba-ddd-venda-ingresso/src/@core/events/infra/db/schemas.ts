@@ -1,3 +1,10 @@
+import { WaitingList } from '../../domain/entities/waiting-list.entity';
+import {
+  WaitingListEntry,
+  WaitingListEntryStatus,
+} from '../../domain/entities/waiting-list-entry.entity';
+import { WaitingListIdSchemaType } from './types/waiting-list-id.schema-type';
+import { WaitingListEntryIdSchemaType } from './types/waiting-list-entry-id.schema-type';
 import { Cascade, EntitySchema } from '@mikro-orm/core';
 import { Partner } from '../../domain/entities/partner.entity';
 import { PartnerIdSchemaType } from './types/partner-id.schema-type';
@@ -162,6 +169,59 @@ export const OrderSchema = new EntitySchema<Order>({
       mapToPk: true,
       inherited: true,
       customType: new EventSpotIdSchemaType(),
+    },
+  },
+});
+
+export const WaitingListSchema = new EntitySchema<WaitingList>({
+  class: WaitingList,
+  uniques: [{ properties: ['event_id', 'section_id'] }],
+  properties: {
+    id: { primary: true, customType: new WaitingListIdSchemaType() },
+    event_id: {
+      reference: 'm:1',
+      entity: () => Event,
+      mapToPk: true,
+      inherited: true,
+      customType: new EventIdSchemaType(),
+    },
+    section_id: {
+      reference: 'm:1',
+      entity: () => EventSection,
+      mapToPk: true,
+      inherited: true,
+      customType: new EventSectionIdSchemaType(),
+    },
+    entries: {
+      reference: '1:m',
+      entity: () => WaitingListEntry,
+      mappedBy: (entry) => entry.waiting_list_id,
+      eager: true,
+      cascade: [Cascade.ALL],
+      orderBy: { position: 'asc' },
+    },
+  },
+});
+
+export const WaitingListEntrySchema = new EntitySchema<WaitingListEntry>({
+  class: WaitingListEntry,
+  properties: {
+    id: { primary: true, customType: new WaitingListEntryIdSchemaType() },
+    customer_id: {
+      reference: 'm:1',
+      entity: () => Customer,
+      mapToPk: true,
+      inherited: true,
+      customType: new CustomerIdSchemaType(),
+    },
+    position: { type: 'number' },
+    status: { enum: true, items: () => WaitingListEntryStatus },
+    waiting_list_id: {
+      reference: 'm:1',
+      entity: () => WaitingList,
+      mapToPk: true,
+      hidden: true,
+      customType: new WaitingListIdSchemaType(),
     },
   },
 });

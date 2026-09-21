@@ -1,3 +1,4 @@
+import { WaitingListMysqlRepository } from '../@core/events/infra/db/repositories/waiting-list-mysql.repository';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module, OnModuleInit } from '@nestjs/common';
 import {
@@ -8,6 +9,8 @@ import {
   OrderSchema,
   PartnerSchema,
   SpotReservationSchema,
+  WaitingListSchema,
+  WaitingListEntrySchema,
 } from '../@core/events/infra/db/schemas';
 import { PartnerMysqlRepository } from '../@core/events/infra/db/repositories/partner-mysql.repository';
 import { EntityManager } from '@mikro-orm/mysql';
@@ -48,6 +51,8 @@ import { PartnerCreatedIntegrationEvent } from '../@core/events/domain/events/in
       EventSpotSchema,
       OrderSchema,
       SpotReservationSchema,
+      WaitingListSchema,
+      WaitingListEntrySchema,
     ]),
     ApplicationModule,
     BullModule.registerQueue({
@@ -55,6 +60,11 @@ import { PartnerCreatedIntegrationEvent } from '../@core/events/domain/events/in
     }),
   ],
   providers: [
+    {
+      provide: 'IWaitingListRepository',
+      useFactory: (em: EntityManager) => new WaitingListMysqlRepository(em),
+      inject: [EntityManager],
+    },
     {
       provide: 'IPartnerRepository',
       useFactory: (em: EntityManager) => new PartnerMysqlRepository(em),
