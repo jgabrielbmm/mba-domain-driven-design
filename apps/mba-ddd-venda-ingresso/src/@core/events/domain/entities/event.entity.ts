@@ -1,3 +1,4 @@
+import { EventSpotReleased } from '../events/domain-events/event-spot-released.event';
 import { AggregateRoot } from '../../../common/domain/aggregate-root';
 import { PartnerId } from './partner.entity';
 import Uuid from '../../../common/domain/value-objects/uuid.vo';
@@ -225,6 +226,17 @@ export class Event extends AggregateRoot {
     this.addEvent(
       new EventMarkedSportAsReserved(this.id, section.id, command.spot_id),
     );
+  }
+
+  markSpotAsAvailable(spot_id: EventSpotId) {
+    const section = this.sections.find(
+      (s) => !!s.spots.find((spot) => spot.id.equals(spot_id)),
+    );
+    if (!section) {
+      throw new Error('Spot not found');
+    }
+    section.markSpotAsAvailable(spot_id);
+    this.addEvent(new EventSpotReleased(this.id, section.id, spot_id));
   }
 
   get sections(): ICollection<EventSection> {

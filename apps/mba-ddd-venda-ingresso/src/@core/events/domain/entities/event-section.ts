@@ -124,6 +124,14 @@ export class EventSection extends Entity {
     return true;
   }
 
+  markSpotAsAvailable(spot_id: EventSpotId) {
+    const spot = this.spots.find((spot) => spot.id.equals(spot_id));
+    if (!spot) {
+      throw new Error('Spot not found');
+    }
+    spot.markAsAvailable();
+  }
+
   markSpotAsReserved(spot_id: EventSpotId) {
     const spot = this.spots.find((spot) => spot.id.equals(spot_id));
     if (!spot) {

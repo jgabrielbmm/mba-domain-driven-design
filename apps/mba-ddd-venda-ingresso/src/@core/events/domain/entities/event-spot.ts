@@ -47,6 +47,10 @@ export class EventSpot extends Entity {
     this.is_published = false;
   }
 
+  markAsAvailable() {
+    this.is_reserved = false;
+  }
+
   markAsReserved() {
     this.is_reserved = true;
   }
