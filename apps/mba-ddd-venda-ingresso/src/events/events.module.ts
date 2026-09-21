@@ -1,4 +1,10 @@
+import { CancelOrderService } from '../@core/events/application/cancel-order.service';
+import { WaitingListService } from '../@core/events/application/waiting-list.service';
 import { WaitingListMysqlRepository } from '../@core/events/infra/db/repositories/waiting-list-mysql.repository';
+import { ReleaseOrderSpotHandler } from '../@core/events/application/handlers/release-order-spot.handler';
+import { NotifyWaitingCustomerHandler } from '../@core/events/application/handlers/notify-waiting-customer.handler';
+import { SpotOfferedToWaitingCustomer } from '../@core/events/domain/events/domain-events/spot-offered-to-waiting-customer.event';
+import { SpotOfferedToWaitingCustomerIntegrationEvent } from '../@core/events/domain/events/integration-events/spot-offered-to-waiting-customer.int-events';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module, OnModuleInit } from '@nestjs/common';
 import {
@@ -64,6 +70,52 @@ import { PartnerCreatedIntegrationEvent } from '../@core/events/domain/events/in
       provide: 'IWaitingListRepository',
       useFactory: (em: EntityManager) => new WaitingListMysqlRepository(em),
       inject: [EntityManager],
+    },
+    {
+      provide: CancelOrderService,
+      useFactory: (orderRepo, appService) =>
+        new CancelOrderService(orderRepo, appService),
+      inject: ['IOrderRepository', ApplicationService],
+    },
+    {
+      provide: WaitingListService,
+      useFactory: (
+        waitingListRepo,
+        customerRepo,
+        eventRepo,
+        appService,
+        reservationRepo,
+      ) =>
+        new WaitingListService(
+          waitingListRepo,
+          customerRepo,
+          eventRepo,
+          appService,
+          reservationRepo,
+        ),
+      inject: [
+        'IWaitingListRepository',
+        'ICustomerRepository',
+        'IEventRepository',
+        ApplicationService,
+        'ISpotReservationRepository',
+      ],
+    },
+    {
+      provide: ReleaseOrderSpotHandler,
+      useFactory: (eventRepo, reservationRepo, manager) =>
+        new ReleaseOrderSpotHandler(eventRepo, reservationRepo, manager),
+      inject: [
+        'IEventRepository',
+        'ISpotReservationRepository',
+        DomainEventManager,
+      ],
+    },
+    {
+      provide: NotifyWaitingCustomerHandler,
+      useFactory: (waitingListRepo, manager) =>
+        new NotifyWaitingCustomerHandler(waitingListRepo, manager),
+      inject: ['IWaitingListRepository', DomainEventManager],
     },
     {
       provide: 'IPartnerRepository',
@@ -165,6 +217,28 @@ export class EventsModule implements OnModuleInit {
 
   onModuleInit() {
     console.log('EventsModule initialized');
+    ReleaseOrderSpotHandler.listensTo().forEach((name) => {
+      this.domainEventManager.register(name, async (event) => {
+        const handler = await this.moduleRef.resolve(ReleaseOrderSpotHandler);
+        await handler.handle(event);
+      });
+    });
+    NotifyWaitingCustomerHandler.listensTo().forEach((name) => {
+      this.domainEventManager.register(name, async (event) => {
+        const handler = await this.moduleRef.resolve(
+          NotifyWaitingCustomerHandler,
+        );
+        await handler.handle(event);
+      });
+    });
+    this.domainEventManager.registerForIntegrationEvent(
+      SpotOfferedToWaitingCustomer.name,
+      async (event: SpotOfferedToWaitingCustomer) => {
+        await this.integrationEventsQueue.add(
+          new SpotOfferedToWaitingCustomerIntegrationEvent(event),
+        );
+      },
+    );
     MyHandlerHandler.listensTo().forEach((eventName: string) => {
       this.domainEventManager.register(eventName, async (event) => {
         const handler: MyHandlerHandler = await this.moduleRef.resolve(
