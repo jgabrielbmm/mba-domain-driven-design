@@ -1,6 +1,7 @@
 import { CancelOrderService } from '../@core/events/application/cancel-order.service';
 import { WaitingListService } from '../@core/events/application/waiting-list.service';
 import { WaitingListMysqlRepository } from '../@core/events/infra/db/repositories/waiting-list-mysql.repository';
+import { WaitingListController } from './events/waiting-list.controller';
 import { ReleaseOrderSpotHandler } from '../@core/events/application/handlers/release-order-spot.handler';
 import { NotifyWaitingCustomerHandler } from '../@core/events/application/handlers/notify-waiting-customer.handler';
 import { SpotOfferedToWaitingCustomer } from '../@core/events/domain/events/domain-events/spot-offered-to-waiting-customer.event';
@@ -199,6 +200,7 @@ import { PartnerCreatedIntegrationEvent } from '../@core/events/domain/events/in
     },
   ],
   controllers: [
+    WaitingListController,
     PartnersController,
     CustomersController,
     EventsController,

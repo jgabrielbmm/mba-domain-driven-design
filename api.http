@@ -1,57 +1,52 @@
-###
-GET http://localhost:3000
+@base = http://localhost:3000
 
-###
-GET http://localhost:3000/partners
-
-###
-POST http://localhost:3000/partners
+### Executar em ordem após preparar o schema. REST Client captura os IDs das respostas.
+# @name createPartner
+POST {{base}}/partners
 Content-Type: application/json
 
-{
-    "name": "Partner 1"
-}
+{ "name": "Partner 1" }
 
 ###
-@partner_id = 076a2ae5-b4ed-438d-89fc-e1a4b42372ba
+@partner_id = {{createPartner.response.body.id}}
 
-###
-GET http://localhost:3000/customers
-
-###
-POST http://localhost:3000/customers
+### Cliente A compra o lugar
+# @name createCustomerA
+POST {{base}}/customers
 Content-Type: application/json
 
-{
-    "name": "Customer 1",
-    "cpf": "592.110.870-74"
-}
+{ "name": "Customer A", "cpf": "592.110.870-74" }
 
 ###
-@customer_id = 61f0ff6e-0bb1-4635-8899-4b88ce46975b
+@customer_id = {{createCustomerA.response.body.id}}
+
+### Cliente B entra na fila
+# @name createCustomerB
+POST {{base}}/customers
+Content-Type: application/json
+
+{ "name": "Customer B", "cpf": "703.758.870-91" }
 
 ###
-GET http://localhost:3000/events
+@waiting_customer_id = {{createCustomerB.response.body.id}}
 
 ###
-POST http://localhost:3000/events
+# @name createEvent
+POST {{base}}/events
 Content-Type: application/json
 
 {
     "name": "Event 1",
     "description": "Description 1",
-    "date": "2020-01-01T00:00:00.000Z",
+    "date": "2027-01-01T00:00:00.000Z",
     "partner_id": "{{partner_id}}"
 }
 
 ###
-@event_id = 3181cb03-59e6-469a-9942-358b07882a72
+@event_id = {{createEvent.response.body.id}}
 
 ###
-GET http://localhost:3000/events/{{event_id}}/sections
-
-###
-POST http://localhost:3000/events/{{event_id}}/sections
+POST {{base}}/events/{{event_id}}/sections
 Content-Type: application/json
 
 {
@@ -62,41 +57,75 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:3000/events/{{event_id}}/publish-all
+PUT {{base}}/events/{{event_id}}/publish-all
 
 ###
-@section_id = 42a5f5b1-30c5-4b2f-b9b8-84e5cc948542
+# @name listSections
+GET {{base}}/events/{{event_id}}/sections
 
 ###
-PUT http://localhost:3000/events/{{event_id}}/sections/{{section_id}}
-Content-Type: application/json
-
-{
-    "name": "Section 1 updateddddd",
-    "description": "Description 1 updatedddd"
-}
+@section_id = {{listSections.response.body.$[0].id}}
 
 ###
-GET http://localhost:3000/events/{{event_id}}/sections/{{section_id}}/spots
+# @name listSpots
+GET {{base}}/events/{{event_id}}/sections/{{section_id}}/spots
 
 ###
-PUT http://localhost:3000/events/{{event_id}}/sections/{{section_id}}/spots/2179f4e2-b3bc-4be9-b55d-f0876f24987d
-Content-Type: application/json
+@spot_id = {{listSpots.response.body.$[0].id}}
 
-{
-    "location": "Location 1 updateddddqqqq"
-}
-
-###
-GET http://localhost:3000/events/{{event_id}}/orders
-
-###
-POST http://localhost:3000/events/{{event_id}}/orders
+### Compra esgota a seção
+# @name createOrder
+POST {{base}}/events/{{event_id}}/orders
 Content-Type: application/json
 
 {
     "customer_id": "{{customer_id}}",
     "section_id": "{{section_id}}",
-    "spot_id": "96298e63-5a38-4352-b97d-322259f10921",
+    "spot_id": "{{spot_id}}",
     "card_token": "tok_visa"
 }
+
+###
+@order_id = {{createOrder.response.body.id}}
+
+### Entrada do cliente B: PENDING
+POST {{base}}/events/{{event_id}}/sections/{{section_id}}/waiting-list
+Content-Type: application/json
+
+{ "customer_id": "{{waiting_customer_id}}" }
+
+### Antes do cancelamento: PENDING
+GET {{base}}/events/{{event_id}}/sections/{{section_id}}/waiting-list
+
+### Único comando que dispara as duas reações e a integração: CANCELLED
+POST {{base}}/events/{{event_id}}/orders/{{order_id}}/cancel
+
+### Lugar disponível: reserved = false
+GET {{base}}/events/{{event_id}}/sections/{{section_id}}/spots
+
+### Depois do cancelamento: NOTIFIED. Conferir também o terminal do apps/emails.
+GET {{base}}/events/{{event_id}}/sections/{{section_id}}/waiting-list
+
+### Consultas e alterações do roteiro original
+GET {{base}}/partners
+
+###
+GET {{base}}/customers
+
+###
+GET {{base}}/events
+
+###
+GET {{base}}/events/{{event_id}}/orders
+
+###
+PUT {{base}}/events/{{event_id}}/sections/{{section_id}}
+Content-Type: application/json
+
+{ "name": "Section 1 updated", "description": "Description 1 updated" }
+
+###
+PUT {{base}}/events/{{event_id}}/sections/{{section_id}}/spots/{{spot_id}}
+Content-Type: application/json
+
+{ "location": "Location 1" }
