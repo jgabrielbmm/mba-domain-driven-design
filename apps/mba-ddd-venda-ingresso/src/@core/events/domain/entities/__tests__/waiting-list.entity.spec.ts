@@ -16,11 +16,13 @@ const createList = () =>
 
 describe('WaitingList', () => {
   initOrm();
+
   it('joins with typed IDs, ordered pending entries and domain events', () => {
     const list = createList();
     const customer = new CustomerId();
     const first = list.join(customer);
     const second = list.join(new CustomerId());
+
     expect(list.id).toBeInstanceOf(WaitingListId);
     expect(first.status).toBe(WaitingListEntryStatus.PENDING);
     expect(list.orderedEntries).toEqual([first, second]);
@@ -39,7 +41,9 @@ describe('WaitingList', () => {
   it('rejects a duplicate pending customer without changing the queue', () => {
     const list = createList();
     const customer = new CustomerId();
+
     list.join(customer);
+
     expect(() => list.join(new CustomerId(customer.value))).toThrow(
       'Customer already in waiting list',
     );
@@ -52,8 +56,11 @@ describe('WaitingList', () => {
     const customer = new CustomerId();
     const first = list.join(customer);
     const second = list.join(new CustomerId());
+
     list.clearEvents();
+
     const spot = new EventSpotId();
+
     expect(list.notifyNext(spot)).toBe(first);
     expect(first.status).toBe(WaitingListEntryStatus.NOTIFIED);
     expect(second.status).toBe(WaitingListEntryStatus.PENDING);
@@ -70,13 +77,16 @@ describe('WaitingList', () => {
     expect(list.notifyNext(spot)).toBe(second);
     expect(list.notifyNext(spot)).toBeUndefined();
     expect(list.events.size).toBe(2);
+
     const third = list.join(customer);
+
     expect(third.position).toBe(3);
     expect(third.status).toBe(WaitingListEntryStatus.PENDING);
   });
 
   it('does nothing when there are no entries', () => {
     const list = createList();
+
     expect(list.notifyNext(new EventSpotId())).toBeUndefined();
     expect(list.events.size).toBe(0);
   });

@@ -16,9 +16,12 @@ describe('Order cancellation', () => {
         event_spot_id: new EventSpotId(),
         amount: 100,
       });
+
       if (status === OrderStatus.PAID) order.pay();
+
       order.clearEvents();
       order.cancel();
+
       expect(order.status).toBe(OrderStatus.CANCELLED);
       expect(order.toJSON().status).toBe('CANCELLED');
       expect([...order.events]).toEqual([
@@ -37,21 +40,26 @@ describe('Order cancellation', () => {
 
 describe('Event spot release', () => {
   initOrm();
+
   it('finds the owning section, releases only the requested spot and emits its IDs', () => {
     const event = Event.create({
       name: 'Event',
       date: new Date(),
       partner_id: new PartnerId(),
     });
+
     event.addSection({ name: 'Other section', total_spots: 1, price: 50 });
     event.addSection({ name: 'Section', total_spots: 2, price: 100 });
     event.publishAll();
+
     const section = event.sections.values()[1];
     const [first, second] = section.spots.values();
+
     event.markSpotAsReserved({ section_id: section.id, spot_id: first.id });
     event.markSpotAsReserved({ section_id: section.id, spot_id: second.id });
     event.clearEvents();
     event.markSpotAsAvailable(first.id);
+
     expect(first.is_reserved).toBe(false);
     expect(second.is_reserved).toBe(true);
     expect(

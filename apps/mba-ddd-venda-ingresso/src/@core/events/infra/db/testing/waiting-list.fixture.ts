@@ -35,13 +35,17 @@ export async function seedWaitingList(em: EntityManager) {
     date: new Date(),
     description: 'Waiting list',
   });
+
   event.addSection({ name: 'Section', total_spots: 1, price: 200 });
   event.publishAll();
+
   const section = event.sections.values()[0];
   const spot = section.spots.values()[0];
+
   em.persist([partner, ...customers, event]);
   await em.flush();
   em.clear();
+
   return { event, section, spot, customers };
 }
 
