@@ -19,13 +19,19 @@ export class ReleaseOrderSpotHandler implements IDomainEventHandler {
     const event = await this.eventRepo.findByEventSpotId(
       cancelled.event_spot_id,
     );
+
     if (!event) throw new Error('Event not found');
+
     event.markSpotAsAvailable(cancelled.event_spot_id);
+
     const reservation = await this.spotReservationRepo.findById(
       cancelled.event_spot_id,
     );
+
     if (reservation) await this.spotReservationRepo.delete(reservation);
+
     await this.eventRepo.add(event);
+
     await this.domainEventManager.publish(event);
   }
 }

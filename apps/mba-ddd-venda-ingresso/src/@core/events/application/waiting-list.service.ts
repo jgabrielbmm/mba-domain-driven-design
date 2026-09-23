@@ -19,14 +19,20 @@ export class WaitingListService {
   join(input: { customer_id: string; event_id: string; section_id: string }) {
     return this.applicationService.run(async () => {
       const customer = await this.customerRepo.findById(input.customer_id);
+
       if (!customer) throw new Error('Customer not found');
+
       const event = await this.eventRepo.findById(input.event_id);
+
       if (!event) throw new Error('Event not found');
+
       const sectionId = new EventSectionId(input.section_id);
       const section = event.sections.find((section) =>
         section.id.equals(sectionId),
       );
+
       if (!section) throw new Error('Section not found');
+
       for (const spot of section.spots.values()) {
         if (
           event.allowReserveSpot({
@@ -38,6 +44,7 @@ export class WaitingListService {
           throw new Error('Section is not sold out');
         }
       }
+
       const list =
         (await this.waitingListRepo.findByEventAndSection(
           event.id,
@@ -45,7 +52,9 @@ export class WaitingListService {
         )) ??
         WaitingList.create({ event_id: event.id, section_id: section.id });
       const entry = list.join(customer.id);
+
       await this.waitingListRepo.add(list);
+
       return entry;
     });
   }
@@ -55,6 +64,7 @@ export class WaitingListService {
       new EventId(event_id),
       new EventSectionId(section_id),
     );
+
     return list?.orderedEntries ?? [];
   }
 }

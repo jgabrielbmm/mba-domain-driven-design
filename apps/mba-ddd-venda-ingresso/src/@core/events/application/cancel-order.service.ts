@@ -10,9 +10,13 @@ export class CancelOrderService {
   cancel(order_id: string) {
     return this.applicationService.run(async () => {
       const order = await this.orderRepo.findById(order_id);
+
       if (!order) throw new Error('Order not found');
+
       order.cancel();
+
       await this.orderRepo.add(order);
+
       return order;
     });
   }

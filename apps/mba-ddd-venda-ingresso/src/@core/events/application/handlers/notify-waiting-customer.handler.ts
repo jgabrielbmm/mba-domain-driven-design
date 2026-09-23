@@ -18,8 +18,11 @@ export class NotifyWaitingCustomerHandler implements IDomainEventHandler {
       event.event_id,
       event.section_id,
     );
+
     if (!list || !list.notifyNext(event.spot_id)) return;
+
     await this.waitingListRepo.add(list);
+
     await this.domainEventManager.publish(list);
     await this.domainEventManager.publishForIntegrationEvent(list);
   }
