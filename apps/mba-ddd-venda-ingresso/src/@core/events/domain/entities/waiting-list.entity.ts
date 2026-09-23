@@ -30,18 +30,22 @@ export class WaitingList extends AggregateRoot {
     section_id: EventSectionId | string;
   }) {
     super();
+
     this.id =
       typeof props.id === 'string'
         ? new WaitingListId(props.id)
         : props.id ?? new WaitingListId();
+
     this.event_id =
       props.event_id instanceof EventId
         ? props.event_id
         : new EventId(props.event_id);
+
     this.section_id =
       props.section_id instanceof EventSectionId
         ? props.section_id
         : new EventSectionId(props.section_id);
+
     this._entries = MyCollectionFactory.create<WaitingListEntry>(this);
   }
 
@@ -59,12 +63,15 @@ export class WaitingList extends AggregateRoot {
     ) {
       throw new Error('Customer already in waiting list');
     }
+
     const position =
       this.entries
         .map((entry) => entry.position)
         .reduce((max, n) => Math.max(max, n), 0) + 1;
     const entry = new WaitingListEntry({ customer_id, position });
+
     this.entries.add(entry);
+
     this.addEvent(
       new CustomerJoinedWaitingList(
         this.id,
@@ -73,6 +80,7 @@ export class WaitingList extends AggregateRoot {
         this.section_id,
       ),
     );
+
     return entry;
   }
 
@@ -80,8 +88,11 @@ export class WaitingList extends AggregateRoot {
     const entry = this.orderedEntries.find(
       (entry) => entry.status === WaitingListEntryStatus.PENDING,
     );
+
     if (!entry) return;
+
     entry.notify();
+
     this.addEvent(
       new SpotOfferedToWaitingCustomer(
         this.id,
@@ -91,6 +102,7 @@ export class WaitingList extends AggregateRoot {
         spot_id,
       ),
     );
+
     return entry;
   }
 
@@ -103,6 +115,7 @@ export class WaitingList extends AggregateRoot {
   get entries(): ICollection<WaitingListEntry> {
     return this._entries;
   }
+
   set entries(entries: AnyCollection<WaitingListEntry>) {
     this._entries = MyCollectionFactory.createFrom<WaitingListEntry>(entries);
   }

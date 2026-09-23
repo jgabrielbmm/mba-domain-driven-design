@@ -22,14 +22,17 @@ export class WaitingListEntry extends Entity {
     status?: WaitingListEntryStatus;
   }) {
     super();
+
     this.id =
       typeof props.id === 'string'
         ? new WaitingListEntryId(props.id)
         : props.id ?? new WaitingListEntryId();
+
     this.customer_id =
       props.customer_id instanceof CustomerId
         ? props.customer_id
         : new CustomerId(props.customer_id);
+
     this.position = props.position;
     this.status = props.status ?? WaitingListEntryStatus.PENDING;
   }

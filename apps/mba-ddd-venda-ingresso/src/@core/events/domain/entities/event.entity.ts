@@ -232,10 +232,13 @@ export class Event extends AggregateRoot {
     const section = this.sections.find(
       (s) => !!s.spots.find((spot) => spot.id.equals(spot_id)),
     );
+
     if (!section) {
       throw new Error('Spot not found');
     }
+
     section.markSpotAsAvailable(spot_id);
+
     this.addEvent(new EventSpotReleased(this.id, section.id, spot_id));
   }
 
