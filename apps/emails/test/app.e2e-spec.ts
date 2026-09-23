@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { EmailsModule } from './../src/emails.module';
 
 describe('EmailsController (e2e)', () => {
@@ -13,6 +13,10 @@ describe('EmailsController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app?.close();
   });
 
   it('/ (GET)', () => {
